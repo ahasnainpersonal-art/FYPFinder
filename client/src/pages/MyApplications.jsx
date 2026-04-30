@@ -11,7 +11,6 @@ export default function MyApplications() {
   const statusColor = (status) => {
     if (status === 'approved') return 'bg-green-100 text-green-700'
     if (status === 'rejected') return 'bg-red-100 text-red-700'
-    if (status === 'under_review') return 'bg-amber-100 text-amber-700'
     return 'bg-gray-100 text-gray-600'
   }
 
@@ -26,6 +25,22 @@ export default function MyApplications() {
           <span className={`text-xs px-3 py-1 rounded-full font-semibold ${statusColor(app.status)}`}>
             {app.status}
           </span>
+
+          {app.group?.members?.length ? (
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-gray-700">Group Members</p>
+              <p className="text-sm text-gray-700">
+                {app.group.members.map((m) => m.name).join(', ')}
+              </p>
+            </div>
+          ) : null}
+
+          {app.pitch ? (
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-gray-700">Pitch</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{app.pitch}</p>
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

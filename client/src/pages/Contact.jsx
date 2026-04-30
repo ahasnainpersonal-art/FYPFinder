@@ -1,9 +1,7 @@
-import { useState } from 'react'
-import axios from 'axios'
+import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-
-import { API_BASE } from '../config/api'
+import contactService from '../services/contactService'
 
 export default function Contact() {
   const { user } = useSelector((state) => state.auth)
@@ -11,6 +9,7 @@ export default function Contact() {
 
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [status, setStatus] = useState('idle')
+  const [submissions, setSubmissions] = useState([])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -18,13 +17,18 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
-      await axios.post(`${API_BASE}/api/contact`, form)
+      await contactService.submit(form)
       setStatus('success')
       setForm({ name: '', email: '', message: '' })
-    } catch (err) {
+    } catch {
       setStatus('error')
     }
   }
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return
+    contactService.getAll().then((data) => setSubmissions(Array.isArray(data) ? data : [])).catch(() => setSubmissions([]))
+  }, [user])
 
   return (
     <div>
@@ -40,7 +44,7 @@ export default function Contact() {
             </button>
             <button
               onClick={() => navigate('/register')}
-              className="rounded-md px-4 py-2 bg-blue-600 text-white hover:bg-blue-800"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
             >
               Register
             </button>
@@ -87,13 +91,13 @@ export default function Contact() {
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
           >
             {status === 'loading' ? 'Submitting...' : 'Submit'}
           </button>
 
           {status === 'success' && (
-            <p className="text-green-600 text-sm">Submitted successfully!</p>
+            <p className="text-green-600 text-sm">Message sent successfully</p>
           )}
           {status === 'error' && (
             <p className="text-red-600 text-sm">Failed to submit. Try again.</p>
@@ -103,8 +107,28 @@ export default function Contact() {
         <div className="mt-8 bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">Department Info</h2>
           <p className="text-sm text-gray-700">FAST-NUCES Lahore, Block B Faisal Town</p>
+          <p className="text-sm text-gray-700">fast@nu.edu.pk</p>
           <p className="text-sm text-gray-700">+92-42-111-128-128</p>
         </div>
+
+        {user?.role === 'admin' && (
+          <div className="mt-8 bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Submissions</h2>
+            {submissions.length === 0 ? (
+              <p className="text-sm text-gray-500">No submissions yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {submissions.map((s) => (
+                  <div key={s._id} className="border border-gray-200 rounded-md p-3">
+                    <p className="text-sm font-semibold text-gray-900">{s.name}</p>
+                    <p className="text-xs text-gray-500">{s.email}</p>
+                    <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{s.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-4">
           <iframe

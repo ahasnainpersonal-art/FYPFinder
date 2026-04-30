@@ -9,6 +9,11 @@ const projectSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    enum: ['listed', 'industrial', 'student_proposed'],
+    default: 'listed',
+  },
   domain: {
     type: String,
     enum: ['AI', 'Web', 'Mobile', 'Cybersecurity', 'R&D', 'Other'],
@@ -18,6 +23,15 @@ const projectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  assignedGroup: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    default: null,
+  },
+  showInBlog: {
+    type: Boolean,
+    default: false,
   },
   teamSize: {
     type: Number,

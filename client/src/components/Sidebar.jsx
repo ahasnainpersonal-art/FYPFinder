@@ -5,6 +5,7 @@ const studentLinks = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Browse Projects', path: '/projects' },
   { label: 'My Applications', path: '/my-applications' },
+  { label: 'Blog', path: '/blog' },
   { label: 'Profile', path: '/profile' },
   { label: 'Contact', path: '/contact' },
 ]
@@ -13,6 +14,7 @@ const supervisorLinks = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Post Project', path: '/post-project' },
   { label: 'My Projects', path: '/my-projects' },
+  { label: 'Blog', path: '/blog' },
   { label: 'Profile', path: '/profile' },
   { label: 'Contact', path: '/contact' },
 ]
@@ -42,7 +44,7 @@ export default function Sidebar() {
           key={link.path}
           onClick={() => navigate(link.path)}
           className={`text-left px-6 py-3 text-sm hover:bg-gray-700 
-            ${location.pathname === link.path ? 'bg-gray-700 font-semibold border-l-4 border-blue-600' : 'border-l-4 border-transparent'}`}
+            ${location.pathname === link.path ? 'bg-gray-700 font-semibold border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`}
         >
           {link.label}
         </button>

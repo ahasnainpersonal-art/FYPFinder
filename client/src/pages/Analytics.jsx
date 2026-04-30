@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import axios from 'axios'
 import { useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
 import {
@@ -13,41 +12,32 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-
-const getAuthHeader = () => {
-  const raw = localStorage.getItem('user')
-  const user = raw ? JSON.parse(raw) : null
-  return { headers: { Authorization: `Bearer ${user?.token}` } }
-}
+import adminService from '../services/adminService'
 
 export default function Analytics() {
   const { user } = useSelector((state) => state.auth)
   const [stats, setStats] = useState(null)
-  const [domains, setDomains] = useState({})
+  const [domains, setDomains] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError('')
 
     const fetchAll = async () => {
       try {
         const [statsRes, domainsRes] = await Promise.all([
-          axios.get(`${API_BASE}/api/admin/analytics`, getAuthHeader()),
-          axios.get(`${API_BASE}/api/admin/analytics/domains`, getAuthHeader()),
+          adminService.getAnalytics(),
+          adminService.getDomainAnalytics(),
         ])
 
         if (cancelled) return
-        setStats(statsRes.data)
-        setDomains(domainsRes.data || {})
+        setStats(statsRes)
+        setDomains(Array.isArray(domainsRes) ? domainsRes : [])
       } catch (err) {
         if (cancelled) return
         setStats(null)
-        setDomains({})
+        setDomains([])
         setError(err?.response?.data?.message || 'Failed to load analytics')
       } finally {
         if (!cancelled) setLoading(false)
@@ -60,18 +50,15 @@ export default function Analytics() {
     }
   }, [])
 
-  if (!user) return <Navigate to="/login" />
-  if (user.role !== 'admin') return <Navigate to="/dashboard" />
-
   const totalApplications = stats?.totalApplications
-  const approved = stats?.approved
+  const approved = stats?.totalApproved
   const approvalRate = !totalApplications
     ? null
     : Math.round(((approved || 0) / totalApplications) * 100)
 
   const domainData = useMemo(() => {
-    const entries = Object.entries(domains || {})
-      .map(([domain, count]) => ({ domain, count: Number(count || 0) }))
+    const entries = (domains || [])
+      .map((row) => ({ domain: row.domain, count: Number(row.count || 0) }))
       .filter((row) => row.domain)
       .sort((a, b) => a.domain.localeCompare(b.domain))
 
@@ -90,6 +77,9 @@ export default function Analytics() {
       { name: 'Supervisors', value: supervisors },
     ]
   }, [stats])
+
+  if (!user) return <Navigate to="/login" />
+  if (user.role !== 'admin') return <Navigate to="/dashboard" />
 
   return (
     <div>

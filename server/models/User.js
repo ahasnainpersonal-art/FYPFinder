@@ -28,7 +28,18 @@ const userSchema = new mongoose.Schema({
     preferredDomain: { type: String, default: 'any' },
     github: { type: String, default: '' },
     bio: { type: String, default: '' },
-    photo: { type: String, default: '' }
+    cgpa: {
+        type: String,
+        enum: ['2.0-2.5', '2.5-3.0', '3.0-3.5', '3.5-4.0'],
+        default: '3.0-3.5'
+    },
+    photo: { type: String, default: '' },
+    researchInterests: { type: String, default: '' },
+    group: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group',
+        default: null,
+    }
 },{
     timestamps:true
 })  

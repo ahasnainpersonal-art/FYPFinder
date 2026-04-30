@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { setUser, setError } from '../features/auth/authSlice'
 import authService from '../services/authService'
 
@@ -9,13 +9,27 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const getSafeNext = () => {
+    const params = new URLSearchParams(location.search)
+    const raw = params.get('next')
+    const decoded = raw ? decodeURIComponent(raw) : ''
+    const fromState = location.state?.next
+
+    const candidate = decoded || fromState || ''
+    if (typeof candidate !== 'string') return ''
+    if (!candidate.startsWith('/')) return ''
+    return candidate
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const data = await authService.login({ email, password })
       dispatch(setUser(data))
-      navigate('/dashboard')
+      const next = getSafeNext()
+      navigate(next || '/dashboard', { replace: true })
     } catch (err) {
       dispatch(setError(err.response?.data?.message || 'Login failed'))
       alert(err.response?.data?.message || 'Login failed')
@@ -45,9 +59,17 @@ export default function Login() {
           />
           <button
             type="submit"
-            className="w-full rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800"
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
           >
             Login
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition text-sm"
+          >
+            Back to Home
           </button>
         </form>
         <p className="mt-4 text-sm">

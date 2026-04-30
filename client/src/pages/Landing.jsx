@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-
-import { API_BASE } from '../config/api'
+import blogService from '../services/blogService'
+import adminService from '../services/adminService'
 
 export default function Landing() {
   const { user } = useSelector((state) => state.auth)
   const navigate = useNavigate()
   const [posts, setPosts] = useState([])
+  const [stats, setStats] = useState({ totalProjects: 0, totalStudents: 0, totalSupervisors: 0 })
 
   useEffect(() => {
     if (user) {
@@ -17,10 +17,20 @@ export default function Landing() {
   }, [user, navigate])
 
   useEffect(() => {
-    axios.get(`${API_BASE}/api/blog`).then((res) => setPosts(res.data)).catch(() => setPosts([]))
+    blogService.getPosts().then(setPosts).catch(() => setPosts([]))
+    adminService.getAnalytics().then((data) => {
+      setStats({
+        totalProjects: data?.totalProjects || 0,
+        totalStudents: data?.totalStudents || 0,
+        totalSupervisors: data?.totalSupervisors || 0,
+      })
+    }).catch(() => {
+      setStats({ totalProjects: 0, totalStudents: 0, totalSupervisors: 0 })
+    })
   }, [])
 
-  const latest = useMemo(() => posts.slice(0, 3), [posts])
+  const latestCommunity = useMemo(() => posts.filter((p) => !p.isIndustrialShowcase).slice(0, 3), [posts])
+  const latestIndustrial = useMemo(() => posts.filter((p) => p.isIndustrialShowcase).slice(0, 3), [posts])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -44,18 +54,18 @@ export default function Landing() {
 
       <main className="flex-1">
         <section className="max-w-5xl mx-auto px-6 py-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">FYPFinder</h1>
-          <p className="text-gray-700 text-lg mb-8">Find your FYP supervisor at FAST-NUCES</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Find Your FYP Supervisor at FAST-NUCES</h1>
+          <p className="text-gray-700 text-lg mb-8">Browse projects, form your group, and get matched with the right supervisor</p>
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/login')}
-              className="rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
             >
               Login
             </button>
             <button
               onClick={() => navigate('/register')}
-              className="rounded-md px-4 py-2 bg-white border border-gray-300 text-gray-800 hover:bg-gray-100"
+              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition text-sm"
             >
               Register
             </button>
@@ -65,31 +75,60 @@ export default function Landing() {
         <section className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
               <p className="text-gray-600 text-sm">Total Projects Posted</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
               <p className="text-gray-600 text-sm">Total Students</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalSupervisors}</p>
               <p className="text-gray-600 text-sm">Total Supervisors</p>
             </div>
           </div>
         </section>
 
         <section className="max-w-5xl mx-auto px-6 py-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Latest Blog Posts</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">From the Community</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {latest.map((p) => (
+            {latestCommunity.map((p) => (
               <div key={p._id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
+                <span className="rounded-full px-3 py-1 text-xs font-semibold inline-block bg-purple-100 text-purple-700 mb-2">{p.tag || 'Tips'}</span>
                 <p className="font-semibold text-gray-900 mb-2">{p.title}</p>
                 <p className="text-sm text-gray-600">{String(p.content || '').slice(0, 150)}{String(p.content || '').length > 150 ? '…' : ''}</p>
+                <button
+                  onClick={() => navigate(`/blog?post=${p._id}`)}
+                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+                >
+                  Read More
+                </button>
               </div>
             ))}
-            {latest.length === 0 && (
+            {latestCommunity.length === 0 && (
               <p className="text-gray-500">No blog posts yet.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="max-w-5xl mx-auto px-6 pb-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Featured Industrial Projects</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {latestIndustrial.map((p) => (
+              <div key={p._id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
+                <span className="rounded-full px-3 py-1 text-xs font-semibold inline-block bg-orange-100 text-orange-700 mb-2">Industrial Project</span>
+                <p className="font-semibold text-gray-900 mb-2">{p.title}</p>
+                <p className="text-sm text-gray-600">{String(p.content || '').slice(0, 150)}{String(p.content || '').length > 150 ? '…' : ''}</p>
+                <button
+                  onClick={() => navigate(`/blog?tag=${encodeURIComponent('Industrial Projects')}&post=${p._id}`)}
+                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+                >
+                  Read More
+                </button>
+              </div>
+            ))}
+            {latestIndustrial.length === 0 && (
+              <p className="text-gray-500">No industrial projects yet.</p>
             )}
           </div>
         </section>
@@ -100,10 +139,11 @@ export default function Landing() {
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Contact</h3>
             <p className="text-sm text-gray-700">FAST-NUCES Lahore, Block B, Faisal Town</p>
-            <p className="text-sm text-gray-700">Email: info@nu.edu.pk</p>
+            <p className="text-sm text-gray-700">Email: fast@nu.edu.pk</p>
+            <p className="text-sm text-gray-700">Phone: +92-42-111-128-128</p>
             <button
               onClick={() => navigate('/contact')}
-              className="mt-4 rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800"
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
             >
               Contact Us
             </button>

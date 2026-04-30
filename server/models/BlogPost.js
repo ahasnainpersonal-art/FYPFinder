@@ -13,9 +13,15 @@ const blogSchema = new mongoose.Schema({
   tag: {
     type: String,
     enum: ['Tips', 'Experience', 'Announcement', 'News'],
-    required: true
+    default: 'Tips'
   },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  isIndustrialShowcase: { type: Boolean, default: false },
+  linkedProject: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    default: null,
+  },
   likes: { type: Number, default: 0 },
   likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [commentSchema]

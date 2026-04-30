@@ -32,4 +32,14 @@ const generateBio = async (data) => {
   return res.data
 }
 
-export default { getProfile, updateProfile, getRecommendations, generateBio }
+const getMyGroup = async () => {
+  const res = await axios.get(`${API_BASE}/api/groups/mine`, getAuthHeader())
+  return res.data
+}
+
+const getPublicProfile = async (userId) => {
+  const res = await axios.get(`${API}/user/${userId}`)
+  return res.data
+}
+
+export default { getProfile, updateProfile, getRecommendations, generateBio, getMyGroup, getPublicProfile }

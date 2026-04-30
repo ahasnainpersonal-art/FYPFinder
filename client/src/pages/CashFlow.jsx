@@ -1,28 +1,24 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import jsPDF from 'jspdf'
-
-import { API_BASE } from '../config/api'
-
-const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'))
-  return { headers: { Authorization: `Bearer ${user?.token}` } }
-}
+import adminService from '../services/adminService'
 
 export default function CashFlow() {
   const [records, setRecords] = useState([])
   const [form, setForm] = useState({ type: 'credit', amount: '', description: '', month: '' })
 
   useEffect(() => {
-    axios.get(`${API_BASE}/api/admin/cashflow`, getAuthHeader())
-      .then(res => setRecords(res.data))
+    adminService.getCashFlow().then((data) => setRecords(Array.isArray(data) ? data : [])).catch(() => setRecords([]))
   }, [])
 
   const handleAdd = async (e) => {
     e.preventDefault()
-    const res = await axios.post(`${API_BASE}/api/admin/cashflow`, form, getAuthHeader())
-    setRecords([res.data, ...records])
-    setForm({ type: 'credit', amount: '', description: '', month: '' })
+    try {
+      const created = await adminService.addCashFlow(form)
+      setRecords([created, ...records])
+      setForm({ type: 'credit', amount: '', description: '', month: '' })
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Failed to add record')
+    }
   }
 
   const exportPDF = () => {
@@ -58,7 +54,7 @@ export default function CashFlow() {
         <input placeholder="Month (e.g. Jan 2026)" value={form.month}
           onChange={e => setForm({ ...form, month: e.target.value })}
           className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-36" required />
-        <button type="submit" className="rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800">
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm">
           Add
         </button>
       </form>

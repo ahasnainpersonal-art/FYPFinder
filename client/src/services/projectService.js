@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { API_BASE, getAuthHeader } from '../config/api'
+import applicationService from './applicationService'
 
 const API = `${API_BASE}/api`
 
@@ -19,24 +20,20 @@ const createProject = async (data) => {
   return res.data
 }
 
-const applyToProject = async (projectId, message) => {
-  const res = await axios.post(`${API}/applications`, { projectId, message }, getAuthHeader())
-  return res.data
+const applyToProject = async (projectId, pitch, proposal) => {
+  return applicationService.applyToProject({ projectId, pitch, proposal })
 }
 
 const getMyApplications = async () => {
-  const res = await axios.get(`${API}/applications/mine`, getAuthHeader())
-  return res.data
+  return applicationService.getMine()
 }
 
 const getApplicants = async (projectId) => {
-  const res = await axios.get(`${API}/applications/project/${projectId}`, getAuthHeader())
-  return res.data
+  return applicationService.getForProject(projectId)
 }
 
 const updateStatus = async (applicationId, status) => {
-  const res = await axios.put(`${API}/applications/${applicationId}/status`, { status }, getAuthHeader())
-  return res.data
+  return applicationService.updateStatus(applicationId, status)
 }
 
 export default { getAllProjects, getMyProjects, createProject, applyToProject, getMyApplications, getApplicants, updateStatus }

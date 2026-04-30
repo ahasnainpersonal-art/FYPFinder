@@ -2,12 +2,11 @@ const express = require('express')
 const dotenv = require('dotenv')
 const cors = require('cors')
 const helmet = require('helmet')
+const mongoose = require('mongoose')
 
 const connectdb = require('./config/db')
 
 dotenv.config()
-
-connectdb()
 
 const app = express()
 
@@ -32,6 +31,22 @@ app.use(cors({
 	credentials: true,
 }))
 app.use(express.json())
+
+// Basic health check (useful to distinguish "server down" vs "DB down")
+app.get('/api/health', (req, res) => {
+	res.json({
+		ok: true,
+		port: Number(process.env.PORT || 5000),
+		dbReady: mongoose.connection.readyState === 1,
+	})
+})
+
+// If DB isn't connected, return 503 for API routes (instead of crashing & causing ERR_CONNECTION_REFUSED)
+app.use('/api', (req, res, next) => {
+	if (req.path === '/health') return next()
+	if (mongoose.connection.readyState === 1) return next()
+	return res.status(503).json({ message: 'Database not connected' })
+})
 
 
 //auth routues
@@ -62,6 +77,23 @@ app.use('/api/contact', contactRoutes)
 const adminRoutes = require('./routes/adminRoutes')
 app.use('/api/admin', adminRoutes)
 
+//groups
+const groupRoutes = require('./routes/groupRoutes')
+app.use('/api/groups', groupRoutes)
+
+// users (student search for typeahead)
+const userRoutes = require('./routes/userRoutes')
+app.use('/api/users', userRoutes)
+
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+
+const start = async () => {
+	const result = await connectdb()
+	if (!result?.connected) {
+		console.warn('Starting API without a DB connection (requests will return 503 until MongoDB connects).')
+	}
+	app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+}
+
+start()

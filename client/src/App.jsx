@@ -10,6 +10,7 @@ import MyApplications from './pages/MyApplications'
 import MyProjects from './pages/MyProjects'
 import Applicants from './pages/Applicants'
 import Profile from './pages/Profile'
+import PublicProfile from './pages/PublicProfile'
 import Blog from './pages/Blog'
 import CashFlow from './pages/CashFlow'
 import Landing from './pages/Landing'
@@ -34,7 +35,8 @@ function App() {
         <Route path="/my-projects" element={wrap(<MyProjects />)} />
         <Route path="/applicants/:projectId" element={wrap(<Applicants />)} />
         <Route path="/profile" element={wrap(<Profile />)} />
-        <Route path="/blog" element={wrap(<Blog />)} />
+        <Route path="/profile/:userId" element={wrapPublicOrPrivate(<PublicProfile />)} />
+        <Route path="/blog" element={wrapPublicOrPrivate(<Blog />)} />
         <Route path="/contact" element={wrapPublicOrPrivate(<Contact />)} />
         <Route path="/analytics" element={wrap(<Analytics />)} />
         <Route path="/cashflow" element={wrap(<CashFlow />)} />

@@ -23,6 +23,7 @@ const regUser = async (req, res) =>  {
     email: user.email,
 
     role: user.role,
+    group: user.group || null,
     token: genToken(user._id, user.role)
   })
 }
@@ -41,6 +42,7 @@ const loginUser = async (req, res) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    group: user.group || null,
     token: genToken(user._id, user.role)
   })
 }

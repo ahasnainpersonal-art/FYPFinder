@@ -1,56 +1,116 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
-import axios from 'axios'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { API_BASE } from '../config/api'
+import blogService from '../services/blogService'
 
-const TAGS = ['All', 'Tips', 'Experience', 'Announcement', 'News']
-
-const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'))
-  return { headers: { Authorization: `Bearer ${user?.token}` } }
-}
+const TAGS = ['All', 'Industrial Projects', 'Tips', 'Experience', 'Announcement', 'News']
 
 const roleBadge = (role) => {
-  if (role === 'admin') return 'bg-blue-100 text-blue-700'
-  if (role === 'supervisor') return 'bg-green-100 text-green-700'
-  return 'bg-gray-100 text-gray-700'
+  if (role === 'admin') return 'bg-red-100 text-red-700'
+  if (role === 'supervisor') return 'bg-purple-100 text-purple-700'
+  return 'bg-blue-100 text-blue-700'
 }
 
 export default function Blog() {
   const { user } = useSelector((state) => state.auth)
+  const navigate = useNavigate()
+  const location = useLocation()
   const [posts, setPosts] = useState([])
-  const [selectedTag, setSelectedTag] = useState('All')
-  const [expandedId, setExpandedId] = useState(null)
   const [commentDrafts, setCommentDrafts] = useState({})
   const [form, setForm] = useState({ title: '', content: '', tag: 'Tips' })
 
+  const buildNextUrl = (next) => {
+    const value = typeof next === 'string' ? next : '/blog'
+    return `/login?next=${encodeURIComponent(value)}`
+  }
+
   useEffect(() => {
-    axios.get(`${API_BASE}/api/blog`).then((res) => setPosts(res.data))
+    blogService.getPosts().then(setPosts).catch(() => setPosts([]))
   }, [])
 
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search])
+  const selectedTag = (() => {
+    const tag = params.get('tag')
+    if (tag && TAGS.includes(tag)) return tag
+    return 'All'
+  })()
+
+  const expandedId = params.get('post') || null
+
+  const updateQuery = (patch) => {
+    const next = new URLSearchParams(location.search)
+    for (const [k, v] of Object.entries(patch || {})) {
+      if (v === null || v === undefined || v === '') next.delete(k)
+      else next.set(k, String(v))
+    }
+    const qs = next.toString()
+    navigate(`/blog${qs ? `?${qs}` : ''}${location.hash || ''}`)
+  }
+
+  useEffect(() => {
+    const hash = String(location.hash || '')
+    if (!hash.startsWith('#')) return
+    const id = hash.slice(1)
+    if (!id) return
+
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }
+  }, [location.hash, expandedId])
+
   const filtered = useMemo(() => {
-    return posts.filter((p) => selectedTag === 'All' || p.tag === selectedTag)
+    return posts.filter((p) => {
+      if (selectedTag === 'All') return true
+      if (selectedTag === 'Industrial Projects') return !!p.isIndustrialShowcase
+      return p.tag === selectedTag
+    })
   }, [posts, selectedTag])
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    const res = await axios.post(`${API_BASE}/api/blog`, form, getAuthHeader())
-    setPosts([res.data, ...posts])
-    setForm({ title: '', content: '', tag: 'Tips' })
+    if (!user) return navigate(buildNextUrl('/blog'))
+    try {
+      const created = await blogService.createPost(form)
+      setPosts([created, ...posts])
+      setForm({ title: '', content: '', tag: 'Tips' })
+    } catch {
+      // noop
+    }
   }
 
   const handleToggleLike = async (postId) => {
-    const res = await axios.post(`${API_BASE}/api/blog/${postId}/like`, {}, getAuthHeader())
-    setPosts(posts.map((p) => (p._id === postId ? res.data : p)))
+    if (!user) return navigate(buildNextUrl(`/blog?post=${postId}#comments-${postId}`))
+    try {
+      const updated = await blogService.toggleLike(postId)
+      setPosts(posts.map((p) => (p._id === postId ? updated : p)))
+    } catch {
+      // noop
+    }
   }
 
   const handleAddComment = async (postId) => {
+    if (!user) return navigate(buildNextUrl(`/blog?post=${postId}#comments-${postId}`))
     const text = commentDrafts[postId]
     if (!text) return
-    const res = await axios.post(`${API_BASE}/api/blog/${postId}/comment`, { text }, getAuthHeader())
-    setPosts(posts.map((p) => (p._id === postId ? res.data : p)))
-    setCommentDrafts({ ...commentDrafts, [postId]: '' })
+    try {
+      const updated = await blogService.addComment(postId, text)
+      setPosts(posts.map((p) => (p._id === postId ? updated : p)))
+      setCommentDrafts({ ...commentDrafts, [postId]: '' })
+    } catch {
+      // noop
+    }
+  }
+
+  const handleDelete = async (postId) => {
+    if (!user) return navigate(buildNextUrl('/blog'))
+    try {
+      await blogService.deletePost(postId)
+      setPosts(posts.filter((p) => p._id !== postId))
+    } catch {
+      // noop
+    }
   }
 
   return (
@@ -85,18 +145,30 @@ export default function Blog() {
             rows={4}
             required
           ></textarea>
-          <button type="submit" className="rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800">
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm">
             Publish
           </button>
         </form>
+      )}
+
+      {!user && (
+        <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition mb-6">
+          <p className="text-sm text-gray-700">Login to like and comment.</p>
+          <button
+            onClick={() => navigate(buildNextUrl('/blog'))}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+          >
+            Login
+          </button>
+        </div>
       )}
 
       <div className="flex flex-wrap gap-2 mb-6">
         {TAGS.map((t) => (
           <button
             key={t}
-            onClick={() => setSelectedTag(t)}
-            className={`rounded-md px-4 py-2 text-sm ${selectedTag === t ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+            onClick={() => updateQuery({ tag: t === 'All' ? null : t, post: null })}
+            className={`rounded-md px-4 py-2 text-sm ${selectedTag === t ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
             {t}
           </button>
@@ -111,6 +183,7 @@ export default function Blog() {
           const showMore = String(p.content || '').length > 150
           const isExpanded = expandedId === p._id
           const liked = user?._id && Array.isArray(p.likedBy) && p.likedBy.some((id) => String(id) === String(user._id))
+          const canDelete = user && (user.role === 'admin' || String(user._id) === String(p.author?._id))
 
           return (
             <div
@@ -119,31 +192,67 @@ export default function Blog() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <button
-                    onClick={() => setExpandedId(isExpanded ? null : p._id)}
-                    className="text-left w-full"
+                  <div
+                    onClick={() => updateQuery({ post: isExpanded ? null : p._id })}
+                    className="text-left w-full cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') updateQuery({ post: isExpanded ? null : p._id })
+                    }}
                   >
                     <h2 className="text-lg font-semibold text-gray-900">{p.title}</h2>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                       <span className="text-gray-500">By {p.author?.name}</span>
                       <span className={`px-2 py-1 rounded-full ${roleBadge(p.author?.role)}`}>{p.author?.role || 'user'}</span>
-                      <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700">{p.tag}</span>
+                      {p.isIndustrialShowcase ? (
+                        <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">Industrial Project</span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700">{p.tag}</span>
+                      )}
                     </div>
                     {!isExpanded && (
-                      <p className="text-sm text-gray-700 mt-3">{preview}{showMore ? '…' : ''}</p>
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-700">{preview}{showMore ? '…' : ''}</p>
+                        {showMore && (
+                          <button
+                            type="button"
+                            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
+                            onClick={() => updateQuery({ post: p._id })}
+                          >
+                            Read More
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </button>
+                  </div>
 
                   {isExpanded && (
                     <div className="mt-3">
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">{p.content}</p>
 
+                      <button
+                        type="button"
+                        className="mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition text-sm"
+                        onClick={() => updateQuery({ post: null })}
+                      >
+                        Show Less
+                      </button>
+
                       <div className="mt-4">
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Comments ({p.comments?.length || 0})</p>
+                        <div id={`comments-${p._id}`}>
+                          <p className="text-sm font-semibold text-gray-700 mb-2">Comments ({p.comments?.length || 0})</p>
+                        </div>
                         <div className="space-y-2">
                           {(p.comments || []).map((c, idx) => (
                             <div key={idx} className="border border-gray-200 rounded-md p-3">
-                              <p className="text-xs text-gray-500 mb-1">{c.name}</p>
+                              <button
+                                type="button"
+                                className="text-xs text-blue-600 hover:underline mb-1"
+                                onClick={() => c.user && navigate(`/profile/${c.user}`)}
+                              >
+                                {c.name}
+                              </button>
                               <p className="text-sm text-gray-700">{c.text}</p>
                             </div>
                           ))}
@@ -152,20 +261,30 @@ export default function Blog() {
                           )}
                         </div>
 
-                        <div className="mt-3 flex gap-2">
-                          <input
-                            value={commentDrafts[p._id] || ''}
-                            onChange={(e) => setCommentDrafts({ ...commentDrafts, [p._id]: e.target.value })}
-                            placeholder="Write a comment..."
-                            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                          />
+                        {user ? (
+                          <div className="mt-3 flex gap-2">
+                            <input
+                              value={commentDrafts[p._id] || ''}
+                              onChange={(e) => setCommentDrafts({ ...commentDrafts, [p._id]: e.target.value })}
+                              placeholder="Write a comment..."
+                              className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                            />
+                            <button
+                              onClick={() => handleAddComment(p._id)}
+                              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm"
+                            >
+                              Send
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => handleAddComment(p._id)}
-                            className="rounded-md px-4 py-2 bg-blue-700 text-white hover:bg-blue-800"
+                            type="button"
+                            onClick={() => navigate(buildNextUrl(`/blog?post=${p._id}#comments-${p._id}`))}
+                            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm"
                           >
-                            Send
+                            Login to comment
                           </button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -174,13 +293,22 @@ export default function Blog() {
                 <div className="flex flex-col items-end gap-2 text-sm">
                   <button
                     onClick={() => handleToggleLike(p._id)}
-                    className="rounded-md px-3 py-2 bg-white border border-gray-300 hover:bg-gray-100"
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm"
                     title={liked ? 'Unlike' : 'Like'}
                   >
-                    <span className="mr-2">{liked ? '♥' : '♡'}</span>
-                    {p.likes || 0}
+                    Like ({p.likes || 0})
                   </button>
                   <span className="text-xs text-gray-500">Comments: {p.comments?.length || 0}</span>
+
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(p._id)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition text-sm"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

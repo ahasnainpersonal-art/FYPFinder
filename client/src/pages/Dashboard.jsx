@@ -24,7 +24,6 @@ export default function Dashboard() {
   const statusColor = (status) => {
     if (status === 'approved') return 'bg-green-100 text-green-700'
     if (status === 'rejected') return 'bg-red-100 text-red-700'
-    if (status === 'under_review') return 'bg-amber-100 text-amber-700'
     return 'bg-gray-100 text-gray-600'
   }
 
@@ -37,8 +36,10 @@ export default function Dashboard() {
   }
 
   const handleApply = async (projectId) => {
+    const pitch = window.prompt('Enter a short pitch for this project (required):')
+    if (!pitch || !String(pitch).trim()) return
     try {
-      await projectService.applyToProject(projectId, '')
+      await projectService.applyToProject(projectId, pitch)
       alert('Applied successfully!')
     } catch (err) {
       alert(err?.response?.data?.message || 'Failed to apply')
