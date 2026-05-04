@@ -1,9 +1,11 @@
 import axios from 'axios'
 
-const API = 'http://localhost:5000/api/profile'
+import { API_BASE, getStoredUser } from '../config/api'
+
+const API = `${API_BASE}/api/profile`
 
 const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'))
+  const user = getStoredUser()
   if (!user?.token) {
     throw new Error('Not authenticated (missing token)')
   }

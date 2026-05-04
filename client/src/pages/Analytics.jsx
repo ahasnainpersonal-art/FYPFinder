@@ -14,8 +14,11 @@ import {
   Cell,
 } from 'recharts'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'))
+  const raw = localStorage.getItem('user')
+  const user = raw ? JSON.parse(raw) : null
   return { headers: { Authorization: `Bearer ${user?.token}` } }
 }
 
@@ -23,30 +26,60 @@ export default function Analytics() {
   const { user } = useSelector((state) => state.auth)
   const [stats, setStats] = useState(null)
   const [domains, setDomains] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/admin/analytics', getAuthHeader())
-      .then((res) => setStats(res.data))
-      .catch(() => setStats(null))
+    let cancelled = false
+    setLoading(true)
+    setError('')
 
-    axios.get('http://localhost:5000/api/admin/analytics/domains', getAuthHeader())
-      .then((res) => setDomains(res.data))
-      .catch(() => setDomains({}))
+    const fetchAll = async () => {
+      try {
+        const [statsRes, domainsRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/admin/analytics`, getAuthHeader()),
+          axios.get(`${API_BASE}/api/admin/analytics/domains`, getAuthHeader()),
+        ])
+
+        if (cancelled) return
+        setStats(statsRes.data)
+        setDomains(domainsRes.data || {})
+      } catch (err) {
+        if (cancelled) return
+        setStats(null)
+        setDomains({})
+        setError(err?.response?.data?.message || 'Failed to load analytics')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchAll()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   if (!user) return <Navigate to="/login" />
   if (user.role !== 'admin') return <Navigate to="/dashboard" />
 
-  const totalApplications = stats?.totalApplications || 0
-  const approved = stats?.approved || 0
-  const approvalRate = totalApplications === 0 ? 0 : Math.round((approved / totalApplications) * 100)
+  const totalApplications = stats?.totalApplications
+  const approved = stats?.approved
+  const approvalRate = !totalApplications
+    ? null
+    : Math.round(((approved || 0) / totalApplications) * 100)
 
   const domainData = useMemo(() => {
+    const entries = Object.entries(domains || {})
+      .map(([domain, count]) => ({ domain, count: Number(count || 0) }))
+      .filter((row) => row.domain)
+      .sort((a, b) => a.domain.localeCompare(b.domain))
+
+    if (entries.length > 0) return entries
+
+    // Fallback when API returns nothing yet
     const ordered = ['AI', 'Web', 'Mobile', 'Cybersecurity', 'Other']
-    return ordered.map((d) => ({
-      domain: d,
-      count: Number(domains?.[d] || 0)
-    }))
+    return ordered.map((d) => ({ domain: d, count: 0 }))
   }, [domains])
 
   const roleData = useMemo(() => {
@@ -62,6 +95,16 @@ export default function Analytics() {
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Analytics</h1>
 
+      {loading && (
+        <p className="text-gray-600">Loading analytics…</p>
+      )}
+
+      {!loading && error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
           <p className="text-3xl font-bold">{stats?.totalUsers ?? '—'}</p>
@@ -76,7 +119,7 @@ export default function Analytics() {
           <p className="text-gray-600">Total Applications</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-          <p className="text-3xl font-bold">{approvalRate}%</p>
+          <p className="text-3xl font-bold">{approvalRate === null ? '—' : `${approvalRate}%`}</p>
           <p className="text-gray-600">Approval Rate</p>
         </div>
       </div>

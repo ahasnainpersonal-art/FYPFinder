@@ -3,6 +3,8 @@ import axios from 'axios'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
+import { API_BASE } from '../config/api'
+
 export default function Contact() {
   const { user } = useSelector((state) => state.auth)
   const navigate = useNavigate()
@@ -16,7 +18,7 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
-      await axios.post('http://localhost:5000/api/contact', form)
+      await axios.post(`${API_BASE}/api/contact`, form)
       setStatus('success')
       setForm({ name: '', email: '', message: '' })
     } catch (err) {

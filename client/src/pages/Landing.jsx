@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+import { API_BASE } from '../config/api'
+
 export default function Landing() {
   const { user } = useSelector((state) => state.auth)
   const navigate = useNavigate()
@@ -15,7 +17,7 @@ export default function Landing() {
   }, [user, navigate])
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/blog').then((res) => setPosts(res.data)).catch(() => setPosts([]))
+    axios.get(`${API_BASE}/api/blog`).then((res) => setPosts(res.data)).catch(() => setPosts([]))
   }, [])
 
   const latest = useMemo(() => posts.slice(0, 3), [posts])

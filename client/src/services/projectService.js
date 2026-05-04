@@ -1,11 +1,8 @@
 import axios from 'axios'
 
-const API = 'http://localhost:5000/api'
+import { API_BASE, getAuthHeader } from '../config/api'
 
-const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'))
-  return { headers: { Authorization: `Bearer ${user?.token}` } }
-}
+const API = `${API_BASE}/api`
 
 const getAllProjects = async () => {
   const res = await axios.get(`${API}/projects`)

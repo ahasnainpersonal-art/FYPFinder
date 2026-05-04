@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import axios from 'axios'
 
+import { API_BASE } from '../config/api'
+
 const TAGS = ['All', 'Tips', 'Experience', 'Announcement', 'News']
 
 const getAuthHeader = () => {
@@ -24,7 +26,7 @@ export default function Blog() {
   const [form, setForm] = useState({ title: '', content: '', tag: 'Tips' })
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/blog').then((res) => setPosts(res.data))
+    axios.get(`${API_BASE}/api/blog`).then((res) => setPosts(res.data))
   }, [])
 
   const filtered = useMemo(() => {
@@ -33,20 +35,20 @@ export default function Blog() {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    const res = await axios.post('http://localhost:5000/api/blog', form, getAuthHeader())
+    const res = await axios.post(`${API_BASE}/api/blog`, form, getAuthHeader())
     setPosts([res.data, ...posts])
     setForm({ title: '', content: '', tag: 'Tips' })
   }
 
   const handleToggleLike = async (postId) => {
-    const res = await axios.post(`http://localhost:5000/api/blog/${postId}/like`, {}, getAuthHeader())
+    const res = await axios.post(`${API_BASE}/api/blog/${postId}/like`, {}, getAuthHeader())
     setPosts(posts.map((p) => (p._id === postId ? res.data : p)))
   }
 
   const handleAddComment = async (postId) => {
     const text = commentDrafts[postId]
     if (!text) return
-    const res = await axios.post(`http://localhost:5000/api/blog/${postId}/comment`, { text }, getAuthHeader())
+    const res = await axios.post(`${API_BASE}/api/blog/${postId}/comment`, { text }, getAuthHeader())
     setPosts(posts.map((p) => (p._id === postId ? res.data : p)))
     setCommentDrafts({ ...commentDrafts, [postId]: '' })
   }

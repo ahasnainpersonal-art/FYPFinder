@@ -13,7 +13,24 @@ const app = express()
 
 // Middleware
 app.use(helmet())
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }))
+
+const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+const configuredOrigins = (process.env.CLIENT_ORIGIN || '')
+	.split(',')
+	.map((s) => s.trim())
+	.filter(Boolean)
+
+const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultOrigins
+
+app.use(cors({
+	origin: (origin, callback) => {
+		// Allow non-browser requests (curl/postman) with no Origin
+		if (!origin) return callback(null, true)
+		if (allowedOrigins.includes(origin)) return callback(null, true)
+		return callback(new Error(`CORS blocked for origin: ${origin}`))
+	},
+	credentials: true,
+}))
 app.use(express.json())
 
 

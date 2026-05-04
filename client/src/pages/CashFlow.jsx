@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import jsPDF from 'jspdf'
 
+import { API_BASE } from '../config/api'
+
 const getAuthHeader = () => {
   const user = JSON.parse(localStorage.getItem('user'))
   return { headers: { Authorization: `Bearer ${user?.token}` } }
@@ -12,13 +14,13 @@ export default function CashFlow() {
   const [form, setForm] = useState({ type: 'credit', amount: '', description: '', month: '' })
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/admin/cashflow', getAuthHeader())
+    axios.get(`${API_BASE}/api/admin/cashflow`, getAuthHeader())
       .then(res => setRecords(res.data))
   }, [])
 
   const handleAdd = async (e) => {
     e.preventDefault()
-    const res = await axios.post('http://localhost:5000/api/admin/cashflow', form, getAuthHeader())
+    const res = await axios.post(`${API_BASE}/api/admin/cashflow`, form, getAuthHeader())
     setRecords([res.data, ...records])
     setForm({ type: 'credit', amount: '', description: '', month: '' })
   }
