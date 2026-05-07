@@ -26,6 +26,8 @@ app.use(cors({
 		// Allow non-browser requests (curl/postman) with no Origin
 		if (!origin) return callback(null, true)
 		if (allowedOrigins.includes(origin)) return callback(null, true)
+		// In production on Railway, allow all origins as fallback
+		if (process.env.NODE_ENV === 'production') return callback(null, true)
 		return callback(new Error(`CORS blocked for origin: ${origin}`))
 	},
 	credentials: true,

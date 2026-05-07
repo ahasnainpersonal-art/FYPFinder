@@ -27,7 +27,7 @@ const adminLinks = [
   { label: 'Contact', path: '/contact' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ sidebarOpen, onClose }) {
   const { user } = useSelector((state) => state.auth)
   const navigate = useNavigate()
   const location = useLocation()
@@ -37,14 +37,26 @@ export default function Sidebar() {
     user?.role === 'admin' ? adminLinks :
     studentLinks
 
+  const handleNavigate = (path) => {
+    navigate(path)
+    onClose()
+  }
+
   return (
-    <aside className="w-48 min-h-screen bg-gray-800 text-white flex flex-col pt-6">
+    <aside
+      className={`fixed lg:relative lg:translate-x-0 lg:z-auto z-40 w-48 min-h-screen bg-gray-800 text-white flex flex-col pt-6 transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+    >
       {links.map((link) => (
         <button
           key={link.path}
-          onClick={() => navigate(link.path)}
-          className={`text-left px-6 py-3 text-sm hover:bg-gray-700 
-            ${location.pathname === link.path ? 'bg-gray-700 font-semibold border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`}
+          onClick={() => handleNavigate(link.path)}
+          className={`text-left px-6 py-3 text-sm hover:bg-gray-700 transition-colors ${
+            location.pathname === link.path
+              ? 'bg-gray-700 font-semibold border-l-4 border-blue-500'
+              : 'border-l-4 border-transparent'
+          }`}
         >
           {link.label}
         </button>

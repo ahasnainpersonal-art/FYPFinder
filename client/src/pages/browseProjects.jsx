@@ -85,16 +85,16 @@ export default function BrowseProjects() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Browse Projects</h1>
-      <div className="flex gap-3 mb-6">
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-6">Browse Projects</h1>
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
         <input
           placeholder="Search by title or description"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 text-sm"
         />
         <select value={domain} onChange={(e) => setDomain(e.target.value)}
-          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:min-w-40">
           <option>All</option>
           <option>AI</option>
           <option>Web</option>
@@ -103,30 +103,30 @@ export default function BrowseProjects() {
           <option>Other</option>
         </select>
       </div>
-      <div className="grid gap-4">
-        {filtered.length === 0 && <p className="text-gray-500 text-center">No projects found</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.length === 0 && <p className="text-gray-500 text-center col-span-full">No projects found</p>}
         {filtered.map((p) => (
-          <div key={p._id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-            <h2 className="text-lg font-semibold">{p.title}</h2>
-            <p className="text-gray-600 text-sm mb-1">{p.description}</p>
-            <p className="text-sm">Domain: <span className="font-medium">{p.domain}</span></p>
-            <p className="text-sm">Supervisor: <span className="font-medium">{p.supervisor?.name}</span></p>
-            <p className="text-sm mb-3">Team Size: {p.teamSize}</p>
+          <div key={p._id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition flex flex-col">
+            <h2 className="text-base md:text-lg font-semibold">{p.title}</h2>
+            <p className="text-gray-600 text-xs md:text-sm mb-1">{p.description}</p>
+            <p className="text-xs md:text-sm">Domain: <span className="font-medium">{p.domain}</span></p>
+            <p className="text-xs md:text-sm">Supervisor: <span className="font-medium">{p.supervisor?.name}</span></p>
+            <p className="text-xs md:text-sm mb-3">Team Size: {p.teamSize}</p>
             {user?.role === 'student' && (
-              <div>
-                <div className="flex flex-col sm:flex-row gap-2">
+              <div className="mt-auto">
+                <div className="flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => handleGenerateProposal(p._id)}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition text-sm"
+                    className="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-md hover:bg-purple-700 transition text-xs md:text-sm"
                     disabled={!!proposalLoading[p._id]}
                   >
-                    {proposalLoading[p._id] ? 'Generating…' : 'Generate Proposal with AI'}
+                    {proposalLoading[p._id] ? 'Generating…' : 'Generate Proposal'}
                   </button>
 
                   <button
                     onClick={() => handleApply(p._id)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm"
+                    className="bg-green-600 text-white px-3 md:px-4 py-2 rounded-md hover:bg-green-700 transition text-xs md:text-sm"
                   >
                     Apply Now
                   </button>
@@ -134,11 +134,11 @@ export default function BrowseProjects() {
 
                 {proposalDrafts[p._id] && (
                   <div className="mt-4 border border-gray-200 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-gray-800 mb-3">Group Application / Proposal</p>
+                    <p className="text-xs md:text-sm font-semibold text-gray-800 mb-3">Group Application / Proposal</p>
 
                     <div className="grid gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Project Understanding</p>
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-1">Project Understanding</p>
                         <textarea
                           rows={3}
                           value={proposalDrafts[p._id].projectUnderstanding}
@@ -148,12 +148,12 @@ export default function BrowseProjects() {
                               [p._id]: { ...prev[p._id], projectUnderstanding: e.target.value },
                             }))
                           }
-                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Proposed Approach</p>
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-1">Proposed Approach</p>
                         <textarea
                           rows={3}
                           value={proposalDrafts[p._id].proposedApproach}
@@ -163,12 +163,12 @@ export default function BrowseProjects() {
                               [p._id]: { ...prev[p._id], proposedApproach: e.target.value },
                             }))
                           }
-                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Relevant Skills</p>
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-1">Relevant Skills</p>
                         <textarea
                           rows={3}
                           value={proposalDrafts[p._id].relevantSkills}
@@ -178,12 +178,12 @@ export default function BrowseProjects() {
                               [p._id]: { ...prev[p._id], relevantSkills: e.target.value },
                             }))
                           }
-                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Timeline</p>
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-1">Timeline</p>
                         <textarea
                           rows={3}
                           value={proposalDrafts[p._id].timeline}
@@ -193,12 +193,12 @@ export default function BrowseProjects() {
                               [p._id]: { ...prev[p._id], timeline: e.target.value },
                             }))
                           }
-                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Why This Group</p>
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-1">Why This Group</p>
                         <textarea
                           rows={3}
                           value={proposalDrafts[p._id].whyThisGroup}
@@ -210,16 +210,16 @@ export default function BrowseProjects() {
                             }))
                             setPitchDrafts((prev) => ({ ...prev, [p._id]: value }))
                           }}
-                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                          className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Member Details (auto-filled from profiles)</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <p className="text-xs md:text-sm font-semibold text-gray-700 mb-2">Member Details (auto-filled)</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {(proposalDrafts[p._id].memberDetails || []).map((m, idx) => (
                             <div key={idx} className="border border-gray-200 rounded-md p-3">
-                              <p className="text-sm font-semibold text-gray-900">{m.name}</p>
+                              <p className="text-xs md:text-sm font-semibold text-gray-900">{m.name}</p>
                               <p className="text-xs text-gray-600">CGPA: {m.cgpa || '—'}</p>
                               <p className="text-xs text-gray-600 mt-1">Skills: {m.skills || '—'}</p>
                               {m.github ? (
@@ -241,7 +241,7 @@ export default function BrowseProjects() {
                     value={pitchDrafts[p._id] || ''}
                     onChange={(e) => setPitchDrafts((prev) => ({ ...prev, [p._id]: e.target.value }))}
                     placeholder="Pitch (sent with application)"
-                    className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                    className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-xs"
                   />
                 </div>
 
@@ -251,18 +251,18 @@ export default function BrowseProjects() {
                       const url = `https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}&title=${encodeURIComponent(p.title)}`
                       window.open(url, '_blank', 'noopener,noreferrer')
                     }}
-                    className="text-xs px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                    className="text-xs px-2 md:px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Share on LinkedIn
+                    LinkedIn
                   </button>
                   <button
                     onClick={() => {
                       const url = `https://wa.me/?text=${encodeURIComponent(`Check out this FYP project: ${p.title} - ${window.location.href}`)}`
                       window.open(url, '_blank', 'noopener,noreferrer')
                     }}
-                    className="text-xs px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white"
+                    className="text-xs px-2 md:px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Share on WhatsApp
+                    WhatsApp
                   </button>
                 </div>
               </div>
