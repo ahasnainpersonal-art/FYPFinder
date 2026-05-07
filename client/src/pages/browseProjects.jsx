@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux'
 import projectService from '../services/projectService'
 import profileService from '../services/profileService'
 import applicationService from '../services/applicationService'
+import { generateProposalPDF } from '../utils/proposalPdfGenerator'
 
 export default function BrowseProjects() {
   const [projects, setProjects] = useState([])
@@ -39,7 +40,28 @@ export default function BrowseProjects() {
       return
     }
     try {
-      await projectService.applyToProject(projectId, pitch, proposal)
+      // Get the project for supervisor info
+      const project = projects.find(p => p._id === projectId)
+      
+      // Generate PDF if we have a proposal
+      let proposalPDF = ''
+      if (proposal) {
+        const memberLabels = (group?.members || []).map((m, idx) => ({
+          ...m,
+          role: String(m._id) === String(group?.leader?._id) ? 'Leader' : 'Member'
+        }))
+        
+        proposalPDF = generateProposalPDF({
+          proposal,
+          projectTitle: project?.title || '',
+          domain: project?.domain || '',
+          supervisorName: project?.supervisor?.name || '',
+          supervisorEmail: project?.supervisor?.email || '',
+          groupMembers: memberLabels,
+        })
+      }
+      
+      await projectService.applyToProject(projectId, pitch, proposal, proposalPDF)
       alert('Applied successfully!')
       setPitchDrafts((prev) => ({ ...prev, [projectId]: '' }))
       setProposalDrafts((prev) => {

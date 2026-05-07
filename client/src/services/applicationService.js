@@ -1,9 +1,9 @@
 import { api, getAuthHeader } from '../config/api'
 
-const applyToProject = async ({ projectId, pitch, proposal }) => {
+const applyToProject = async ({ projectId, pitch, proposal, proposalPDF = '' }) => {
   const res = await api.post(
     '/api/applications',
-    { type: 'group_to_project', projectId, pitch, proposal },
+    { type: 'group_to_project', projectId, pitch, proposal, proposalPDF },
     getAuthHeader()
   )
   return res.data

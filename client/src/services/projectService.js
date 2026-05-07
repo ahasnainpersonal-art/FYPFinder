@@ -20,8 +20,8 @@ const createProject = async (data) => {
   return res.data
 }
 
-const applyToProject = async (projectId, pitch, proposal) => {
-  return applicationService.applyToProject({ projectId, pitch, proposal })
+const applyToProject = async (projectId, pitch, proposal, proposalPDF = '') => {
+  return applicationService.applyToProject({ projectId, pitch, proposal, proposalPDF })
 }
 
 const getMyApplications = async () => {

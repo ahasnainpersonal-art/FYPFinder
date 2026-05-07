@@ -53,6 +53,10 @@ const applicationSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  proposalPDF: {
+    type: String,
+    default: ''
+  },
 }, { timestamps: true })
 
 applicationSchema.pre('validate', function () {

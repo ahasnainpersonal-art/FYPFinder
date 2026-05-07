@@ -34,6 +34,24 @@ export default function Applicants() {
     }
   }
 
+  const handleDownloadProposalPDF = (application) => {
+    if (!application.proposalPDF) {
+      alert('No PDF proposal available for this application')
+      return
+    }
+
+    const linkSource = `data:application/pdf;base64,${application.proposalPDF}`
+    const downloadLink = document.createElement('a')
+    downloadLink.href = linkSource
+    
+    // Create a meaningful filename
+    const groupLeaderName = application.group?.leader?.name || 'Group'
+    const projectTitle = application.project?.title || application.proposedTitle || 'Proposal'
+    downloadLink.download = `proposal_${groupLeaderName}_${projectTitle}.pdf`
+    
+    downloadLink.click()
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Applicants</h1>
@@ -89,7 +107,7 @@ export default function Applicants() {
               </span>
             </div>
           </div>
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-2 flex-wrap">
             <button onClick={() => handleStatus(app._id, 'approved')}
               className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm">
               Approve
@@ -98,6 +116,12 @@ export default function Applicants() {
               className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition text-sm">
               Reject
             </button>
+            {app.proposalPDF && (
+              <button onClick={() => handleDownloadProposalPDF(app)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm">
+                Download Proposal PDF
+              </button>
+            )}
           </div>
         </div>
       ))}

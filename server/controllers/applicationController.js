@@ -70,7 +70,7 @@ const generateProposalForProject = async (req, res) => {
 // POST /api/applications — group leader submits application
 const createApplication = async (req, res) => {
   try {
-    const { type, projectId, proposedTitle, proposedDescription, targetSupervisor, pitch, proposal } = req.body
+    const { type, projectId, proposedTitle, proposedDescription, targetSupervisor, pitch, proposal, proposalPDF } = req.body
 
     if (!type) return res.status(400).json({ message: 'type is required' })
     let finalPitch = pitch
@@ -129,6 +129,7 @@ const createApplication = async (req, res) => {
         project: projectId,
         pitch: finalPitch,
         proposal: proposal || undefined,
+        proposalPDF: proposalPDF || '',
         status: 'pending',
       })
 
@@ -152,6 +153,7 @@ const createApplication = async (req, res) => {
         targetSupervisor: targetSupervisor || null,
         pitch: finalPitch,
         proposal: proposal || undefined,
+        proposalPDF: proposalPDF || '',
         status: 'pending',
       })
 
